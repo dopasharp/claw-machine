@@ -1,0 +1,114 @@
+<!doctype html>
+<html lang="ko">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <meta name="theme-color" content="#0B0E0D">
+  <title>인형뽑기 | 도파#</title>
+  <meta name="dopasharp:game" content="claw-machine">
+  <link rel="canonical" href="https://dopasharp.github.io/claw-machine/">
+  <meta name="description" content="PC 화면이 인형뽑기 기계, 휴대폰이 조종기가 되는 인터랙티브 웹게임. QR 하나로 바로 연결!">
+  <meta property="og:type" content="website">
+  <meta property="og:site_name" content="도파# dopa.shap">
+  <meta property="og:title" content="인형뽑기 🧸">
+  <meta property="og:description" content="PC는 기계, 폰은 조이스틱. 코인 5개로 몇 개나 뽑을 수 있을까?">
+  <meta property="og:url" content="https://dopasharp.github.io/claw-machine/">
+  <meta name="twitter:card" content="summary_large_image">
+  <link rel="icon" href="dopasharp/favicon.svg" type="image/svg+xml">
+  <link rel="preconnect" href="https://cdn.jsdelivr.net" crossorigin>
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/variable/pretendardvariable-dynamic-subset.min.css">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Black+Han+Sans&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="dopasharp/tokens.css">
+  <link rel="stylesheet" href="dopasharp/components.css">
+  <link rel="stylesheet" href="css/style.css?v=1">
+  <script src="dopasharp/dopasharp.js" defer></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
+  <script type="importmap">{"imports":{"three":"https://cdn.jsdelivr.net/npm/three@0.160.1/build/three.module.js"}}</script>
+  <script type="module" src="js/machine.js?v=1"></script>
+  <script>
+    document.addEventListener('click', function (e) {
+      if (window.__clawReady || !e.target.closest || !e.target.closest('#createBtn')) return;
+      document.getElementById('lobbyError').textContent = '게임을 불러오지 못했어요. 페이지를 새로고침해 주세요.';
+    });
+  </script>
+</head>
+<body class="machine-page">
+  <canvas id="scene"></canvas>
+
+  <aside class="side left">
+    <div class="panel">
+      <span class="dopa-label">ROOM</span>
+      <b class="room-code" data-room>-----</b>
+      <span id="modeBadge" class="badge" hidden>로컬 테스트 모드</span>
+      <button id="qrMiniBtn" class="qr-mini" aria-label="QR 크게 보기"><div id="qrMini"></div></button>
+      <p class="small">폰으로 스캔하면<br>조종기가 돼요</p>
+      <div class="status"><span id="padDot" class="dot off"></span><span id="padText">조종기를 기다리는 중…</span></div>
+    </div>
+    <div class="panel keys">
+      <span class="dopa-label">키보드로도 OK</span>
+      <p class="small"><kbd>Enter</kbd> 코인 · <kbd>←↑↓→</kbd> 이동 · <kbd>Space</kbd> 뽑기</p>
+    </div>
+  </aside>
+
+  <aside class="side right">
+    <div class="panel">
+      <span class="dopa-label">COIN</span>
+      <div id="coins" class="coins"></div>
+      <span class="dopa-label">TIME</span>
+      <div id="timer" class="timer">--</div>
+      <p id="hint" class="hint"></p>
+    </div>
+    <div class="panel">
+      <span class="dopa-label">GET <b id="caughtCount">0</b></span>
+      <div id="shelf" class="shelf"></div>
+    </div>
+    <button id="soundBtn" class="icon-btn" aria-label="소리 켜기/끄기">🔊</button>
+  </aside>
+
+  <div id="banner" class="banner"></div>
+  <div id="confetti" class="confetti" aria-hidden="true"></div>
+
+  <section id="result" class="result-pop" aria-live="polite">
+    <div class="card">
+      <span class="dopa-label">GAME OVER</span>
+      <div id="resultArt" class="result-art"></div>
+      <h2 id="resultTitle"></h2>
+      <strong id="resultStat" class="stat"></strong>
+      <p class="small">폰에서 <b>다시 하기</b>를 누르거나 <kbd>R</kbd></p>
+      <button id="againBtn" class="dopa-button">🪙 다시 하기</button>
+    </div>
+  </section>
+
+  <section id="lobby" class="overlay show">
+    <header data-dopa="header"></header>
+    <div class="card">
+      <span class="dopa-label">PC + PHONE INTERACTIVE GAME</span>
+      <div class="hero-emoji" aria-hidden="true">🧸</div>
+      <h1>인형뽑기</h1>
+      <p>이 화면이 <b>인형뽑기 기계</b>, 휴대폰이 <b>조종기</b>가 돼요.</p>
+      <ol class="steps">
+        <li><span><b>기계 켜기</b> 이 PC 화면에 기계가 떠요.</span></li>
+        <li><span><b>QR 스캔</b> 휴대폰으로 찍으면 조이스틱이 돼요.</span></li>
+        <li><span><b>코인 5개</b> 몇 개나 뽑을 수 있을까?</span></li>
+      </ol>
+      <p class="warn">🔊 플레이 중 소리가 나요</p>
+      <button id="createBtn" class="dopa-button dopa-button--block">기계 켜기</button>
+      <p id="lobbyError" class="error" role="alert"></p>
+    </div>
+    <footer data-dopa="footer"></footer>
+  </section>
+
+  <section id="qrOverlay" class="overlay">
+    <div class="card">
+      <span class="dopa-label">CONTROLLER</span>
+      <h2>조종기가 될 휴대폰으로<br>QR 코드를 스캔하세요</h2>
+      <div id="qr" class="qr"></div>
+      <div class="code">방 코드 <b data-room>-----</b></div>
+      <a id="padLink" class="link" target="_blank" rel="noopener">조종기 링크</a>
+      <button id="closeQr" class="dopa-button dopa-button--secondary dopa-button--block">키보드로 먼저 해볼게요</button>
+    </div>
+  </section>
+</body>
+</html>

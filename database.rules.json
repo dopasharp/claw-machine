@@ -1,0 +1,32 @@
+{
+  "rules": {
+    ".read": false,
+    ".write": false,
+    "clawRooms": {
+      "$room": {
+        ".read": "$room.matches(/^[A-Z0-9]{4,8}$/)",
+        ".write": "$room.matches(/^[A-Z0-9]{4,8}$/)",
+        "meta": {
+          ".validate": "newData.hasChildren(['createdAt'])"
+        },
+        "pad": {
+          ".validate": "newData.hasChildren(['at'])"
+        },
+        "input": {
+          ".validate": "newData.child('x').isNumber() && newData.child('z').isNumber() && newData.child('x').val() >= -1 && newData.child('x').val() <= 1 && newData.child('z').val() >= -1 && newData.child('z').val() <= 1"
+        },
+        "cmds": {
+          "$c": {
+            ".validate": "newData.child('type').isString() && newData.child('type').val().matches(/^(coin|drop|reset)$/)"
+          }
+        },
+        "state": {
+          ".validate": "newData.hasChildren(['phase','coins','caught'])"
+        },
+        "$other": {
+          ".validate": false
+        }
+      }
+    }
+  }
+}

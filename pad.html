@@ -1,0 +1,68 @@
+<!doctype html>
+<html lang="ko">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover, user-scalable=no">
+  <meta name="theme-color" content="#0B0E0D">
+  <title>인형뽑기 · 조종기 | 도파#</title>
+  <meta name="dopasharp:game" content="claw-machine">
+  <link rel="canonical" href="https://dopasharp.github.io/claw-machine/">
+  <meta name="description" content="PC 화면이 인형뽑기 기계, 휴대폰이 조종기가 되는 인터랙티브 웹게임.">
+  <meta property="og:type" content="website">
+  <meta property="og:site_name" content="도파# dopa.shap">
+  <meta property="og:title" content="인형뽑기 🧸">
+  <meta property="og:description" content="PC는 기계, 폰은 조이스틱. 코인 5개로 몇 개나 뽑을 수 있을까?">
+  <meta property="og:url" content="https://dopasharp.github.io/claw-machine/">
+  <link rel="icon" href="dopasharp/favicon.svg" type="image/svg+xml">
+  <link rel="preconnect" href="https://cdn.jsdelivr.net" crossorigin>
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/variable/pretendardvariable-dynamic-subset.min.css">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Black+Han+Sans&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="dopasharp/tokens.css">
+  <link rel="stylesheet" href="dopasharp/components.css">
+  <link rel="stylesheet" href="css/style.css?v=1">
+  <script src="dopasharp/dopasharp.js" defer></script>
+  <script type="module" src="js/pad.js?v=1"></script>
+</head>
+<body class="pad-page">
+  <section id="joinScreen" class="screen framed" hidden>
+    <header data-dopa="header"></header>
+    <form id="joinForm" class="card">
+      <span class="dopa-label">CONTROLLER</span>
+      <div class="hero-emoji" aria-hidden="true">🕹️</div>
+      <h1>조종기 입장</h1>
+      <p>PC 화면에 보이는 방 코드를 입력하세요</p>
+      <input id="codeInput" class="code-input" maxlength="8" autocomplete="off" autocapitalize="characters" spellcheck="false" placeholder="ABCDE">
+      <button class="dopa-button dopa-button--block" type="submit">입장하기</button>
+      <p id="joinError" class="error" role="alert"></p>
+    </form>
+    <footer data-dopa="footer"></footer>
+  </section>
+
+  <section id="ctrlScreen" class="screen ctrl" hidden>
+    <div style="width:100%">
+      <div class="ctrl-top">
+        <span class="room"><span id="connDot" class="dot on"></span>ROOM <b id="hudRoom"></b></span>
+        <span class="stats"><span>🪙 <span id="hudCoins">5</span></span><span>🧸 <span id="hudCaught">0</span></span></span>
+      </div>
+      <div class="timebar"><i id="timeFill"></i></div>
+    </div>
+
+    <div id="msg" class="screen-msg" aria-live="polite">
+      <div id="msgBig" class="big">연결 중…</div>
+      <div id="msgSub" class="sub"></div>
+    </div>
+
+    <div id="joy" class="joy off" aria-label="조이스틱">
+      <span class="arrow u">▲</span><span class="arrow d">▲</span><span class="arrow l">▲</span><span class="arrow r">▲</span>
+      <div id="knob" class="knob free"></div>
+    </div>
+
+    <div style="width:100%;display:flex;flex-direction:column;align-items:center">
+      <button id="actionBtn" class="action" disabled>…</button>
+      <div class="ctrl-foot"><span id="connText">기계 연결됨</span></div>
+    </div>
+  </section>
+</body>
+</html>
