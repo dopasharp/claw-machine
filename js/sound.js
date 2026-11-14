@@ -69,6 +69,13 @@ export function grab() {
   noise(0.12, { vol: 0.25, freq: 500 });
   tone(140, 0.15, { type: 'triangle', vol: 0.12 });
 }
+// 꼭대기에 쾅 부딪히는 소리 (둔탁한 쿵 + 쇠 덜컹)
+export function clunk() {
+  noise(0.22, { vol: 0.45, freq: 220 });
+  tone(95, 0.3, { type: 'triangle', vol: 0.16, to: 55 });
+  tone(620, 0.09, { type: 'square', vol: 0.035, when: 0.02 });
+  tone(410, 0.12, { type: 'square', vol: 0.03, when: 0.07 });
+}
 export function thud() {
   noise(0.1, { vol: 0.12, freq: 300 });
 }

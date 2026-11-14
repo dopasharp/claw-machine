@@ -1,9 +1,10 @@
 // 폰 = 조종기. 조이스틱 방향만 보내고, 기계(PC)가 움직임을 계산해요.
 import { joinRoom, normalizeRoomId } from './net.js?v=1';
 
-const $ = (id) => document.getElementById(id);
+const $ = (id) => document.getElementById(id) || document.createElement('div');
 const params = new URLSearchParams(location.search);
-const EMOJI = { bear: '🧸', bunny: '🐰', chick: '🐥', frog: '🐸', pig: '🐷', cat: '🐱', dopa: '💚' };
+const SOLO = document.body.dataset.mode === 'solo'; // 폰 하나로: 같은 페이지의 기계를 직접 조종
+const EMOJI = { bear: '🧸', bunny: '🐰', chick: '🐥', frog: '🐸', pig: '🐷', cat: '🐱', puppy: '🐶', dopa: '💚' };
 const vibe = (p) => {
   if (navigator.userActivation && !navigator.userActivation.hasBeenActive) return;
   try { navigator.vibrate?.(p); } catch { /* iOS 등 미지원 */ }
@@ -69,6 +70,7 @@ function onState(s) {
   }
   if (prev && prev.phase === 'play' && s.phase === 'down') vibe(40);
   if (prev && prev.phase !== 'close' && s.phase === 'up') vibe(25);
+  if (prev && prev.phase !== 'top' && s.phase === 'top') vibe([90, 40, 30]);
   if (s.phase === 'over' && !resultShown) {
     resultShown = true;
     setTimeout(showResult, 900);
@@ -123,7 +125,7 @@ function render() {
     btn.disabled = false;
     btn.textContent = '🪙 다시 하기';
   } else {
-    big = { down: '내려간다…', close: '꽉!', up: '올라간다…', carry: '두근두근…', release: '두근두근…', settle: '과연…?' }[s.phase] || '…';
+    big = { down: '내려간다…', close: '꽉!', up: '올라간다…', top: '쾅!', carry: '두근두근…', release: '두근두근…', settle: '과연…?' }[s.phase] || '…';
     sub = '';
     btn.disabled = true;
     btn.textContent = '잡는 중…';
@@ -239,6 +241,33 @@ addEventListener('keydown', (e) => {
 addEventListener('keyup', (e) => { if (KEY[e.key]) { keys.delete(KEY[e.key]); keyStick(); } });
 
 // ------------------------------------------------------------------ 시작
+function startSolo() {
+  // 네트워크 없이 같은 페이지의 기계(machine.js)에 바로 연결
+  room = {
+    sendInput: (x, z) => window.claw?.setInput(x, z),
+    sendCmd: (type) => {
+      const c = window.claw;
+      if (!c) return;
+      if (type === 'coin') c.insertCoin();
+      else if (type === 'drop') c.dropClaw();
+      else if (type === 'reset') c.resetGame();
+    },
+  };
+  addEventListener('claw:state', (e) => onState(e.detail));
+  $('ctrlScreen').hidden = false;
+  $('soloStart').addEventListener('click', () => {
+    const go = () => {
+      $('startOverlay').classList.remove('show');
+      window.claw.start();
+      window.DopaSharp?.track('game_start', { role: 'solo' });
+    };
+    if (window.claw) go();
+    else addEventListener('claw:ready', go, { once: true });
+  });
+  render();
+}
+
 const fromUrl = params.get('room');
-if (fromUrl) join(fromUrl);
+if (SOLO) startSolo();
+else if (fromUrl) join(fromUrl);
 else showJoin();

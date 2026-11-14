@@ -22,11 +22,11 @@
   <link href="https://fonts.googleapis.com/css2?family=Black+Han+Sans&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="dopasharp/tokens.css">
   <link rel="stylesheet" href="dopasharp/components.css">
-  <link rel="stylesheet" href="css/style.css?v=1">
+  <link rel="stylesheet" href="css/style.css?v=2">
   <script src="dopasharp/dopasharp.js" defer></script>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
   <script type="importmap">{"imports":{"three":"https://cdn.jsdelivr.net/npm/three@0.160.1/build/three.module.js"}}</script>
-  <script type="module" src="js/machine.js?v=1"></script>
+  <script type="module" src="js/machine.js?v=2"></script>
   <script>
     document.addEventListener('click', function (e) {
       if (window.__clawReady || !e.target.closest || !e.target.closest('#createBtn')) return;
@@ -49,6 +49,9 @@
     <div class="panel keys">
       <span class="dopa-label">키보드로도 OK</span>
       <p class="small"><kbd>Enter</kbd> 코인 · <kbd>←↑↓→</kbd> 이동 · <kbd>Space</kbd> 뽑기</p>
+      <span class="dopa-label">시점</span>
+      <p class="small">화면을 <b>드래그</b>해서 돌려보기 · 휠 확대 · 더블클릭 원위치</p>
+      <button class="view-btn" data-view-toggle>🎥 집게 시점</button>
     </div>
   </aside>
 
@@ -95,6 +98,7 @@
       </ol>
       <p class="warn">🔊 플레이 중 소리가 나요</p>
       <button id="createBtn" class="dopa-button dopa-button--block">기계 켜기</button>
+      <a class="dopa-button dopa-button--secondary dopa-button--block" href="solo.html">📱 폰 하나로 하기</a>
       <p id="lobbyError" class="error" role="alert"></p>
     </div>
     <footer data-dopa="footer"></footer>
