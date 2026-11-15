@@ -955,8 +955,15 @@ function update(dt) {
     if (game.t > 0.15 && cl.held) letGo(false);
     if (game.t >= 0.5) setPhase('settle');
   } else if (ph === 'settle') {
-    const busy = prizes.some((p) => p.state === 'chute');
-    if (game.t > 1.4 && !busy) {
+    // 인형이 아직 떨어지거나 굴러가는 중이면(특히 배출구 위·가장자리) 결과를 기다림
+    const busy = prizes.some((p) => {
+      if (p.state === 'chute' || p.state === 'held') return true;
+      if (p.state !== 'free') return false;
+      const speed = p.p.distanceTo(p.q) / SUB;
+      const nearChute = p.p.x < CHUTE.x1 + p.r + 0.15 && p.p.z > CHUTE.z0 - p.r - 0.15;
+      return speed > (nearChute ? 0.05 : 0.35) || (nearChute && p.p.y > CHUTE.h + p.r * 0.5 && speed > 0.01);
+    });
+    if ((game.t > 1.4 && !busy) || game.t > 7) {
       if (!game.roundWon) {
         game.missStreak++;
         game.msg = '아깝다!';
@@ -1118,22 +1125,68 @@ function award(p) {
   game.last = { id: p.id, kind: p.kind, name: k.name, emoji: k.emoji };
   game.msg = null;
   game.missStreak = 0;
-  if (['release', 'settle', 'carry', 'up', 'top'].includes(game.phase)) game.roundWon = true;
+  if (['down', 'close', 'up', 'top', 'carry', 'release', 'settle'].includes(game.phase)) game.roundWon = true;
   sfx.win();
   banner(`${k.emoji} GET! ${k.name}`, k.rare ? 'rare' : 'win', 2200);
-  popOut(p.kind, p.r);
+  popOut(p.kind);
   confetti(k.rare ? 80 : 44);
   publish();
   renderHud();
 }
 
 // 배출구 문에서 인형이 '뽁' 나오는 연출
+// 그다음 앞쪽 패널 위로 폴짝 올라가 피라미드로 쌓임 (게임을 다시 해도 계속 쌓임)
 const pops = [];
-function popOut(kind, r) {
-  const m = makePlush(kind, r * 0.8);
+const pile = [];
+const PILE_MAX = 15;
+const PILE_R = 0.15;
+function popOut(kind) {
+  const m = makePlush(kind, PILE_R);
   m.position.set(HOME.x, -0.75, 1.2);
+  m.rotation.y = rand(-0.4, 0.4);
   scene.add(m);
   pops.push({ m, t: 0 });
+}
+// 패널 위 피라미드 자리: 맨 아래 5개, 그 위 4개 … (조이스틱 왼쪽)
+function pileSlot(i) {
+  let layer = 0;
+  let n = 5;
+  let k = i;
+  while (k >= n && n > 1) { k -= n; layer++; n--; }
+  return new THREE.Vector3(-1.42 + layer * 0.15 + k * 0.3, -0.12 + PILE_R * 0.95 + layer * 0.25, 1.3 + (layer % 2 ? -0.04 : 0.04));
+}
+function updatePile(dt) {
+  for (let i = pops.length - 1; i >= 0; i--) {
+    const o = pops[i];
+    o.t += dt;
+    const t = o.t;
+    o.m.position.z = 1.2 + Math.min(1, t * 3) * 0.35;
+    o.m.position.y = -0.75 + Math.sin(Math.min(1, t * 2.2) * Math.PI) * 0.35;
+    o.m.rotation.y = Math.sin(t * 6) * 0.3;
+    flap.rotation.x = -Math.max(0, 1 - t * 1.5) * 1.1;
+    if (t > 1.1) {
+      pops.splice(i, 1);
+      pile.push({ m: o.m, from: o.m.position.clone(), fly: 0, land: 0 });
+      if (pile.length > PILE_MAX) scene.remove(pile.shift().m);
+    }
+  }
+  pile.forEach((it, i) => {
+    const to = pileSlot(i);
+    if (it.fly !== null) {
+      it.fly = Math.min(1, it.fly + dt / 0.65);
+      const e = 1 - (1 - it.fly) ** 2;
+      it.m.position.lerpVectors(it.from, to, e);
+      it.m.position.y += Math.sin(it.fly * Math.PI) * 0.55;
+      it.m.rotation.y += dt * 8 * (1 - it.fly);
+      if (it.fly >= 1) { it.fly = null; it.land = 1; sfx.thud(); }
+    } else {
+      it.m.position.lerp(to, Math.min(1, dt * 8)); // 맨 아래가 빠지면 자리 이동
+    }
+    // 착지할 때 말랑하게 찌그러짐
+    if (it.land > 0) it.land = Math.max(0, it.land - dt * 3);
+    const sq = Math.sin(it.land * Math.PI) * 0.25;
+    it.m.scale.set(1 + sq, 1 - sq, 1 + sq);
+  });
 }
 
 // ------------------------------------------------------------------ 그리기
@@ -1180,16 +1233,7 @@ function draw(dt, now) {
   const chase = Math.floor(now / (game.phase === 'play' ? 90 : 180));
   bulbs.forEach((m, i) => { m.emissiveIntensity = (i + chase) % 3 === 0 ? 2.2 : 0.35; });
 
-  for (let i = pops.length - 1; i >= 0; i--) {
-    const o = pops[i];
-    o.t += dt;
-    const t = o.t;
-    o.m.position.z = 1.2 + Math.min(1, t * 3) * 0.35;
-    o.m.position.y = -0.75 + Math.sin(Math.min(1, t * 2.2) * Math.PI) * 0.35 - Math.max(0, t - 2) * 2;
-    o.m.rotation.y = Math.sin(t * 6) * 0.3;
-    flap.rotation.x = -Math.max(0, 1 - t * 1.5) * 1.1;
-    if (t > 2.6) { scene.remove(o.m); pops.splice(i, 1); }
-  }
+  updatePile(dt);
   applyCamera(dt);
   renderer.render(scene, camera);
 }
@@ -1365,7 +1409,7 @@ setPad(SOLO);
 window.__clawReady = true;
 // 폰 혼자 모드: 같은 페이지의 조종기(pad.js)가 이 API 로 직접 조종
 window.claw = {
-  game, cl, sw, view, prizes: () => prizes, insertCoin, dropClaw, resetGame, input, setViewMode,
+  game, cl, sw, view, prizes: () => prizes, pile: () => pile, insertCoin, dropClaw, resetGame, input, setViewMode,
   setInput(x, z) { input.pad.x = clamp(+x || 0, -1, 1); input.pad.z = clamp(+z || 0, -1, 1); },
   start() { sfx.unlock(); if (game.phase === 'boot') setPhase('idle'); else publish(); },
   step: (n = 1, dt = 1 / 60) => { for (let i = 0; i < n; i++) update(dt); },

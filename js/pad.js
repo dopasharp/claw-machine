@@ -5,10 +5,41 @@ const $ = (id) => document.getElementById(id) || document.createElement('div');
 const params = new URLSearchParams(location.search);
 const SOLO = document.body.dataset.mode === 'solo'; // 폰 하나로: 같은 페이지의 기계를 직접 조종
 const EMOJI = { bear: '🧸', bunny: '🐰', chick: '🐥', frog: '🐸', pig: '🐷', cat: '🐱', puppy: '🐶', dopa: '💚' };
+// 진동: 안드로이드는 Vibration API, 아이폰(사파리 18+)은 진동 API 가 없어서
+// 숨긴 스위치 체크박스를 눌러 생기는 '톡' 햅틱을 여러 번 울려 대신함
+const iosHaptic = (() => {
+  if ('vibrate' in navigator) return null;
+  const label = document.createElement('label');
+  const box = document.createElement('input');
+  box.type = 'checkbox';
+  box.setAttribute('switch', '');
+  label.append(box);
+  label.setAttribute('aria-hidden', 'true');
+  label.style.cssText = 'position:fixed;left:-200px;top:0;opacity:0;pointer-events:none';
+  document.body.append(label);
+  return label;
+})();
 const vibe = (p) => {
+  if (iosHaptic) {
+    const pulses = Array.isArray(p) ? Math.ceil(p.length / 2) : 1;
+    for (let i = 0; i < pulses; i++) setTimeout(() => iosHaptic.click(), i * 110);
+    return;
+  }
   if (navigator.userActivation && !navigator.userActivation.hasBeenActive) return;
-  try { navigator.vibrate?.(p); } catch { /* iOS 등 미지원 */ }
+  try { navigator.vibrate?.(p); } catch { /* 미지원 */ }
 };
+
+// 뽑은 인형 더미 (폰 하나로 화면): 이번 접속 동안 계속 쌓임
+const PILE_MAX = 40;
+function addToPile(last) {
+  const pile = document.getElementById('trophyPile');
+  if (!pile) return;
+  const s = document.createElement('span');
+  s.textContent = last.emoji;
+  if (last.kind === 'dopa') s.className = 'rare';
+  pile.append(s);
+  while (pile.children.length > PILE_MAX) pile.firstElementChild.remove();
+}
 
 let room = null;
 let roomId = '';
@@ -64,8 +95,9 @@ function onState(s) {
     const fresh = lastWinId !== null || (prev && prev.caught < s.caught);
     lastWinId = s.last.id;
     if (fresh) {
-      vibe([80, 60, 80, 60, 200]);
+      vibe([150, 60, 150, 60, 150, 60, 400]); // 뽑았다! 드르륵 드르륵 드르르륵
       flash(`${s.last.emoji} GET!`, `${s.last.name}을(를) 뽑았어요!`, 2600);
+      setTimeout(() => addToPile(s.last), 1300); // 배출구에서 나온 뒤 더미에 툭
     }
   }
   if (prev && prev.phase === 'play' && s.phase === 'down') vibe(40);
@@ -145,7 +177,7 @@ function showResult() {
     art,
     title: s.caught === 0 ? '빈손이에요…' : s.caught >= 3 ? '인형뽑기 장인!' : '득템 성공!',
     stat: `5판 중 ${s.caught}개 GET`,
-    detail: 'PC 화면은 기계, 폰은 조이스틱!',
+    detail: SOLO ? '폰 하나로, 집게 카메라 보면서 뽑기!' : 'PC 화면은 기계, 폰은 조이스틱!',
     shareText: `도파# 인형뽑기 — 코인 5개로 ${s.caught}개 뽑았어요 ${art}`,
     retryLabel: '🪙 다시 하기',
     onRetry: () => room?.sendCmd('reset'),
